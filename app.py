@@ -517,14 +517,14 @@ def get_signals():
         "count": len(bot_status["signals"])
     }
 
-@app.route('/errors')
-def get_errors():
-    return {
-        "errors": bot_status["errors"][-10:][::-1],
-        "count": len(bot_status["errors"])
-    }
+@app.route('/')
+def home():
+    try:
+        return render_template('dashboard.html')
+    except Exception as e:
+        return f"Error loading template: {str(e)}", 500
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 8000))
-
+    port = int(os.environ.get("PORT", 8000))
     app.run(host='0.0.0.0', port=port)
+
