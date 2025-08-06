@@ -1,3 +1,4 @@
 #!/bin/bash
-pip install --upgrade pip setuptools wheel
-pip install -i https://pypi.org/simple -r requirements.txt
+# render-build.sh
+python -m pip install --upgrade pip
+pip install -r requirements.txt
