@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: trading-bot
+    runtime: python
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r requirements.txt
+    startCommand: gunicorn app:create_app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: PYTHONUNBUFFERED
+        value: 1
