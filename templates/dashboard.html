@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bot de Trading - Panel de Control</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        .badge-lg {
+            font-size: 1rem;
+            padding: 0.5em 0.75em;
+        }
+        .signal-card {
+            transition: all 0.3s ease;
+        }
+        .signal-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .uptime {
+            font-family: monospace;
+            background-color: #f8f9fa;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Bot de Trading - Panel de Control</h1>
+            <div class="uptime">Última actualización: <span id="current-time">{{ uptime }}</span></div>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card signal-card">
+                    <div class="card-body">
+                        <h5 class="card-title d-flex justify-content-between align-items-center">
+                            <span>Estado del Bot</span>
+                            {% if status.running %}
+                                <span class="badge bg-success badge-lg">EN EJECUCIÓN</span>
+                            {% else %}
+                                <span class="badge bg-danger badge-lg">DETENIDO</span>
+                            {% endif %}
+                        </h5>
+                        
+                        <div class="mb-3">
+                            <p><strong>Inicio:</strong> {{ status.start_time or "No iniciado" }}</p>
+                            <p><strong>Última actividad:</strong> {{ status.last_activity or "N/A" }}</p>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                            {% if status.running %}
+                                <a href="/stop" class="btn btn-danger me-md-2">
+                                    <i class="bi bi-stop-circle"></i> Detener Bot
+                                </a>
+                            {% else %}
+                                <a href="/start" class="btn btn-success me-md-2">
+                                    <i class="bi bi-play-circle"></i> Iniciar Bot
+                                </a>
+                            {% endif %}
+                            <a href="/status" class="btn btn-outline-secondary" target="_blank">
+                                <i class="bi bi-arrow-repeat"></i> Estado API
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card signal-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Estadísticas</h5>
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="card bg-light mb-3">
+                                    <div class="card-body text-center">
+                                        <h2 class="card-title">{{ signals|length }}</h2>
+                                        <p class="card-text">Señales (últimas 10)</p>
+                                        <a href="/signals" class="btn btn-sm btn-outline-primary" target="_blank">Ver todas</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="card bg-light mb-3">
+                                    <div class="card-body text-center">
+                                        <h2 class="card-title">{{ errors|length }}</h2>
+                                        <p class="card-text">Errores (últimos 10)</p>
+                                        <a href="/errors" class="btn btn-sm btn-outline-primary" target="_blank">Ver todos</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card signal-card">
+                    <div class="card-body">
+                        <h5 class="card-title d-flex justify-content-between align-items-center">
+                            <span>Últimas Señales</span>
+                            <span class="badge bg-primary">{{ signals|length }}</span>
+                        </h5>
+                        
+                        {% if signals %}
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Par</th>
+                                            <th>Dirección</th>
+                                            <th>Entrada</th>
+                                            <th>Hora</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for signal in signals %}
+                                        <tr onclick="window.location.href='#signal-{{ loop.index }}'" style="cursor: pointer;">
+                                            <td>{{ signal.symbol }}</td>
+                                            <td>
+                                                <span class="badge bg-{% if signal.direction == 'LONG' %}success{% else %}danger{% endif %}">
+                                                    {{ signal.direction }}
+                                                </span>
+                                                {% if signal.divergence %}
+                                                    <i class="bi bi-info-circle text-info" title="{{ signal.divergence }}"></i>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ signal.entry }}</td>
+                                            <td>{{ signal.time }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">No hay señales recientes</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card signal-card">
+                    <div class="card-body">
+                        <h5 class="card-title d-flex justify-content-between align-items-center">
+                            <span>Errores Recientes</span>
+                            <span class="badge bg-danger">{{ errors|length }}</span>
+                        </h5>
+                        
+                        {% if errors %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Error</th>
+                                            <th>Hora</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for error in errors %}
+                                        <tr>
+                                            <td class="text-danger">{{ error|truncate(50) }}</td>
+                                            <td>{{ status.last_activity }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-success">No hay errores recientes</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% if signals %}
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Detalle de Señales</h5>
+                        <div class="accordion" id="signalsAccordion">
+                            {% for signal in signals %}
+                            <div class="accordion-item" id="signal-{{ loop.index }}">
+                                <h2 class="accordion-header" id="heading{{ loop.index }}">
+                                    <button class="accordion-button {% if not loop.first %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}" aria-expanded="{% if loop.first %}true{% else %}false{% endif %}" aria-controls="collapse{{ loop.index }}">
+                                        {{ signal.symbol }} - {{ signal.direction }} @ {{ signal.entry }} - {{ signal.time }}
+                                    </button>
+                                </h2>
+                                <div id="collapse{{ loop.index }}" class="accordion-collapse collapse {% if loop.first %}show{% endif %}" aria-labelledby="heading{{ loop.index }}" data-bs-parent="#signalsAccordion">
+                                    <div class="accordion-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <p><strong>Dirección:</strong> 
+                                                    <span class="badge bg-{% if signal.direction == 'LONG' %}success{% else %}danger{% endif %}">
+                                                        {{ signal.direction }}
+                                                    </span>
+                                                </p>
+                                                <p><strong>Precio Entrada:</strong> {{ signal.entry }}</p>
+                                                <p><strong>Stop Loss:</strong> {{ signal.sl }}</p>
+                                                <p><strong>Take Profit:</strong> {{ signal.tp }}</p>
+                                                <p><strong>Tamaño:</strong> {{ signal.size }} USD</p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                {% if signal.divergence %}
+                                                    <div class="alert alert-info">
+                                                        <strong>Divergencia:</strong> {{ signal.divergence }}
+                                                    </div>
+                                                {% endif %}
+                                                <p><strong>Hora:</strong> {{ signal.time }}</p>
+                                                <p><strong>Par:</strong> {{ signal.symbol }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <footer class="mt-5 py-3 bg-light">
+        <div class="container text-center">
+            <p class="mb-0">Bot de Trading - Panel de Control</p>
+            <p class="text-muted small">Última actualización: <span id="footer-time">{{ uptime }}</span></p>
+        </div>
+    </footer>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Actualizar la hora actual
+        function updateTime() {
+            const now = new Date();
+            const timeStr = now.toISOString().replace('T', ' ').substring(0, 19);
+            document.getElementById('current-time').textContent = timeStr;
+            document.getElementById('footer-time').textContent = timeStr;
+        }
+        
+        // Actualizar cada segundo
+        updateTime();
+        setInterval(updateTime, 1000);
+        
+        // Actualizar el estado del bot cada 30 segundos
+        function updateBotStatus() {
+            fetch('/status')
+                .then(response => response.json())
+                .then(data => {
+                    const statusBadge = document.querySelector('.card-title .badge');
+                    const startBtn = document.querySelector('a[href="/start"]');
+                    const stopBtn = document.querySelector('a[href="/stop"]');
+                    
+                    if (data.running) {
+                        statusBadge.className = 'badge bg-success badge-lg';
+                        statusBadge.textContent = 'EN EJECUCIÓN';
+                        if (startBtn) startBtn.style.display = 'none';
+                        if (stopBtn) stopBtn.style.display = 'block';
+                    } else {
+                        statusBadge.className = 'badge bg-danger badge-lg';
+                        statusBadge.textContent = 'DETENIDO';
+                        if (startBtn) startBtn.style.display = 'block';
+                        if (stopBtn) stopBtn.style.display = 'none';
+                    }
+                    
+                    const lastActivity = document.querySelector('strong:contains("Última actividad")').nextSibling;
+                    if (lastActivity) {
+                        lastActivity.textContent = data.last_activity || "N/A";
+                    }
+                });
+        }
+        
+        // Actualizar cada 30 segundos
+        updateBotStatus();
+        setInterval(updateBotStatus, 30000);
+    </script>
+</body>
+</html>
