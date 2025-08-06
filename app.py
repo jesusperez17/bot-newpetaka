@@ -13,8 +13,13 @@ import json
 import numpy as np
 from ta.trend import EMAIndicator, MACD, ADXIndicator
 from ta.momentum import RSIIndicator
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
 
 # Configuración del estado del bot
 bot_status = {
@@ -520,11 +525,19 @@ def get_signals():
 @app.route('/')
 def home():
     try:
+        logger.info("Solicitud recibida en la ruta principal")
         return render_template('dashboard.html')
     except Exception as e:
-        return f"Error loading template: {str(e)}", 500
+        logger.error(f"Error al renderizar plantilla: {str(e)}")
+        return f"Error en la aplicación: {str(e)}", 500
+
+def create_app():
+    return app
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 8000))
+    port = int(os.environ.get('PORT', 8000))
+    logger.info(f"Iniciando aplicación en el puerto {port}")
+    app.run(host='0.0.0.0', port=port, debug=False)
     app.run(host='0.0.0.0', port=port)
+
 
